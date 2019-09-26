@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cadastral v5</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- leaflet.css -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" />
+
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+
+    <link rel="stylesheet" href="css/leaflet-sidebar.css" />
+    <link rel="stylesheet" href="css/leaflet-search.css" />
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- leaflet1.5.1 -->
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
+    <script type="text/javascript" src="js/leaflet-providers.js"></script>
+    <script src="js/leaflet-sidebar.js"></script>
+    <script src="js/leaflet-search.js"></script>   
+    <script src="js/leaflet-zoom-show-hide.js"></script>
+    <!-- jquery3.1.1 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <!-- turf@5 -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
+    <!-- Data -->
+    <script src="data/JS/v5_kalix190923_wgs84.js"></script>
+    <script src="data/JS/v5_kalix190923_wgs84_beteckning_dissolve.js"></script>
+    <script src="data/JS/v5_kalix190923_wgs84_traktNamn_dissolve.js"></script>
+
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        html, body, #map {
+            height: 100%;
+            font: 10pt "Helvetica Neue", Arial, Helvetica, sans-serif;
+        }
+
+        .lorem {
+            font-style: italic;
+            color: #AAA;
+        }
+    </style>
+    
+</head>
+<body>
+<div id="sidebar" class="sidebar collapsed">
+    <!-- Nav tabs -->
+    <div class="sidebar-tabs">
+        <ul role="tablist">
+            <li><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
+            <li><a href="#profile" role="tab"><i class="fa fa-user"></i></a></li>
+            <li class="disabled"><a href="#messages" role="tab"><i class="fa fa-envelope"></i></a></li>
+<!--                <li><a href="https://github.com/Turbo87/sidebar-v2" role="tab" target="_blank"><i class="fa fa-github"></i></a></li>-->
+        </ul>
+
+        <ul role="tablist">
+            <li><a href="#settings" role="tab"><i class="fa fa-gear"></i></a></li>
+        </ul>
+    </div>
+
+    <!-- Tab panes -->
+    <div class="sidebar-content">
+        <div class="sidebar-pane" id="home">
+            <h1 class="sidebar-header">
+                DATA SEARCH
+                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+            </h1>
+            <br>
+             <div class="container-fluid">
+              <ul class="nav nav-pills nav-justified" id="myTabs">
+                <li class="active"><a href="#tab1" data-url="php/tab1.html">Till salu</a></li>
+                <li><a href="#tab2" data-url="php/tab2.html">Senat Salda</a></li>
+                <li><a href="#tab3" data-url="php/tab3.html">Ej marknaden</a></li>
+              </ul>
+
+              <div class="tab-content">
+                <div class="tab-pane fade active" id="tab1"></div>
+                <div class="tab-pane fade" id="tab2"></div>
+                <div class="tab-pane fade" id="tab3"></div>
+              </div>
+            </div>                
+        </div>
+
+        <div class="sidebar-pane" id="profile">
+            <h1 class="sidebar-header">Profile<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+        </div>
+
+        <div class="sidebar-pane" id="messages">
+            <h1 class="sidebar-header">Messages<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+        </div>
+
+        <div class="sidebar-pane" id="settings">
+            <h1 class="sidebar-header">Settings<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+        </div>
+    </div>
+</div>
+
+<div id="map" class="sidebar-map"></div>
+
+<script>
+    
+
+var map = L.map('map');
+//        map.setView([65.85, 23.14], 13);
+
+var OpenStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	maxZoom: 19,
+	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+var Esri_WorldStreetMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+});
+var Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+});
+        
+// To show a marker  
+//var marker = L.marker([51.2, 7]).addTo(map);
+
+// Sidebar
+var sidebar = L.control.sidebar('sidebar').addTo(map);   
+
+//
+//var featureGroup = L.featureGroup();
+//var beteckning = L.geoJSON(beteckning_low).addTo(map);
+//var track = L.geoJSON(track_low).addTo(map);
+
+// JSON kalixGeoJSON layer 
+var kalixGeoJSON = L.geoJSON(kalix, {
+    opacity: 0.5,    
+    color: 'black',
+    fillColor: 'grey',
+    fillOpacity: 0.2,
+    weight: 1,
+    onEachFeature: function(feature, layer) {
+        layer.on({
+            mouseover: highlightFeatureOnMouseOver, // hover
+            mouseout: resetFeatureStyle
+        });
+    }
+});
+map.fitBounds(kalixGeoJSON.getBounds());
+// kalixGeoJSON highlightFeatureOnMouseOver  
+function highlightFeatureOnMouseOver(e) {
+    e.target.setStyle({
+        opacity: 1,      
+        color: 'red',
+        fillColor: 'yellow',
+        fillOpacity: 0.5,
+        weight: 2
+    });
+    e.target.bringToFront();
+}
+
+function resetFeatureStyle(e) {
+    kalixGeoJSON.resetStyle(e.target);
+}
+//kalixGeoJSON popup
+kalixGeoJSON.eachLayer(function(layer) {
+    var popupContent = '<b>TraktNamn</b>: ' + layer.feature.properties.traktNamn + '<br>';
+    popupContent += '<b>Beteckning</b>: ' + layer.feature.properties.beteckning + '<br>';
+    popupContent += '<b>RegisterOmrade</b>: ' + layer.feature.properties.registerOmrade + '<br>';
+    popupContent += '<b>Omradesnummer</b>: ' + layer.feature.properties.omradesnummer + '<br>';
+    layer.bindPopup(popupContent);
+});
+// JSON beteckning layer 
+var beteckning = L.geoJSON(beteckning, {
+    opacity: 0.5,    
+    color: 'grey',
+    fillColor: 'blue',
+    fillOpacity: 0.3,
+    weight: 1,
+    onEachFeature: function(feature, layer) {
+        layer.on({
+            mouseover: highlightFeatureOnMouseOver, // hover
+            mouseout: resetFeatureStyle
+        });
+    }
+});
+map.fitBounds(beteckning.getBounds());
+// beteckning highlightFeatureOnMouseOver  
+function highlightFeatureOnMouseOver(e) {
+    e.target.setStyle({
+        opacity: 1,      
+        color: 'red',
+        fillColor: 'yellow',
+        fillOpacity: 0.5,
+        weight: 1
+    });
+    e.target.bringToFront();
+}
+
+function resetFeatureStyle(e) {
+    beteckning.resetStyle(e.target);
+}
+//beteckning popup
+beteckning.eachLayer(function(layer) {
+    var popupContent = '<b>TraktNamn</b>: ' + layer.feature.properties.traktNamn + '<br>';
+    popupContent += '<b>Beteckning</b>: ' + layer.feature.properties.beteckning + '<br>';
+    popupContent += '<b>RegisterOmrade</b>: ' + layer.feature.properties.registerOmrade + '<br>';
+//    popupContent += '<b>Omradesnummer</b>: ' + layer.feature.properties.omradesnummer + '<br>';
+    layer.bindPopup(popupContent);
+});  
+// JSON track layer 
+var track = L.geoJSON(track, {
+    opacity: 0.5,    
+    color: 'black',
+    fillColor: 'grey',
+    fillOpacity: 0.3,
+    weight: 1,
+    onEachFeature: function(feature, layer) {
+        layer.on({
+            mouseover: highlightFeatureOnMouseOver, // hover
+            mouseout: resetFeatureStyle
+        });
+    }
+});
+map.fitBounds(track.getBounds());
+// track highlightFeatureOnMouseOver  
+function highlightFeatureOnMouseOver(e) {
+    e.target.setStyle({
+        opacity: 1,      
+        color: 'red',
+        fillColor: 'yellow',
+        fillOpacity: 0.5,
+        weight: 2
+    });
+    e.target.bringToFront();
+}
+
+function resetFeatureStyle(e) {
+    track.resetStyle(e.target);
+}
+//track popup
+track.eachLayer(function(layer) {
+    var popupContent = '<b>TraktNamn</b>: ' + layer.feature.properties.traktNamn + '<br>';
+//    popupContent += '<b>Beteckning</b>: ' + layer.feature.properties.beteckning + '<br>';
+    popupContent += '<b>RegisterOmrade</b>: ' + layer.feature.properties.registerOmrade + '<br>';
+//    popupContent += '<b>Omradesnummer</b>: ' + layer.feature.properties.omradesnummer + '<br>';
+    layer.bindPopup(popupContent);
+}); 
+//    
+// Showing Mouse Coordinates on the Map      
+var div = document.createElement('div');
+div.id = 'coordsDiv';
+div.style.position = 'absolute';
+div.style.bottom = '10px';
+div.style.left = '10px';
+div.style.padding = '10px';
+div.style.border = '2px solid #c2bfba';
+div.style.zIndex = '999';
+div.style.background ='white';
+document.getElementById('map').appendChild(div);
+
+map.on('mousemove', function(e) {
+    var lat = e.latlng.lat.toFixed(5);
+    var lon = e.latlng.lng.toFixed(5);
+    document.getElementById('coordsDiv').innerHTML = lat + ', ' + lon;
+});
+
+// Scale	
+var scale = L.control.scale({
+    'position':'bottomright',
+  'updateWhenIdle': true
+}).addTo(map);    
+
+// Basemaps	
+var baseMaps = {
+    "OSM": OpenStreetMap,
+    "Esri Street" :Esri_WorldStreetMap,
+    "Esri Imagery": Esri_WorldImagery
+};
+	
+// Overlays
+var overlays = {
+    "kalixGeoJSON": kalixGeoJSON
+}
+layerControl = L.control.layers(baseMaps,overlays).addTo(map);
+
+//Search by Nominatum API
+//map.addControl( new L.Control.Search({
+//    url: 'https://nominatim.openstreetmap.org/search?format=json&q={s}',
+//    jsonpParam: 'json_callback',
+//    propertyName: 'display_name',
+//    propertyLoc: ['lat','lon'],
+//    marker: L.circleMarker([0,0],{radius:30}),
+//    autoCollapse: true,
+//    autoType: false,
+//    minLength: 2,
+//    position: 'topleft'
+//})
+//              );
+
+// Search by layer
+	var searchControl = new L.Control.Search({
+		layer: beteckning,
+        position: 'topleft',
+		propertyName: 'beteckning',
+		marker: false,
+		moveToLocation: function(latlng, title, map) {
+			//map.fitBounds( latlng.layer.getBounds() );
+			var zoom = map.getBoundsZoom(latlng.layer.getBounds());
+  			map.setView(latlng, zoom); // access the zoom
+		}
+	});
+
+	searchControl.on('search:locationfound', function(e) {
+		
+		//console.log('search:locationfound', );
+
+		//map.removeLayer(this._markerSearch)
+
+		e.layer.setStyle({fillColor: '#3f0', color: '#0f0'});
+//		if(e.layer._popup)
+//			e.layer.openPopup();
+
+	}).on('search:collapsed', function(e) {
+
+		featuresLayer.eachLayer(function(layer) {	//restore feature color
+			featuresLayer.resetStyle(layer);
+		});	
+	});
+	
+	map.addControl( searchControl );  //inizialize search control
+///
+
+// Different zoom levels
+zsh = new ZoomShowHide();
+zsh.addTo(map);
+//track
+track.min_zoom = 6;
+track.max_zoom = 9;
+zsh.addLayer(track);
+//beteckning
+beteckning.min_zoom = 10;
+beteckning.max_zoom = 11;
+zsh.addLayer(beteckning);
+//kalixGeoJSON
+kalixGeoJSON.min_zoom = 12;
+kalixGeoJSON.max_zoom = 18;
+zsh.addLayer(kalixGeoJSON);
+    
+$(document).ready(function() { 
+
+$('#myTabs a').click(function (e) {
+    e.preventDefault();
+
+var url = $(this).attr("data-url");
+var href = this.hash;
+var pane = $(this);
+
+// ajax load from data-url
+$(href).load(url,function(result){      
+    pane.tab('show');
+});
+});
+
+// load first tab content
+$('#tab1').load($('.active a').attr("data-url"),function(result){
+  $('.active a').tab('show');
+  $('#tab1').addClass('in');
+});
+}); 
+
+
+</script>
+</body>
+</html>

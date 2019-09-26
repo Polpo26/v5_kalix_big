@@ -1,0 +1,30 @@
+.nav-pills > li.active > a, .nav-pills > li.active > a:focus, .nav-pills > li.active > a:hover {
+
+    color: #000;
+    background-color: #638a92;
+
+}
+
+.nav-pills > li > a {
+
+    border-radius: 0px;
+
+}
+
+
+.sidebar-tabs > li.active, .sidebar-tabs > ul > li.active {
+
+    background-color: #638a92;
+
+}
+
+.sidebar-header {
+    font-size:12pt;
+    color: #000;
+    background-color: #dfdfdf;
+}
+
+
+a {
+    color: #638a92;
+}
